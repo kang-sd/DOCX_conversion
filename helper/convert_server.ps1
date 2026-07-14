@@ -40,7 +40,18 @@ function Convert-Document([byte[]]$bytes, [string]$srcName, [string]$target) {
   [System.IO.File]::WriteAllBytes($tmpIn, $bytes)
   try {
     $hwp = Get-Hwp
-    $opened = $hwp.Open($tmpIn, "", "")
+    
+    if ($srcExt -eq ".docx") {
+      $hwp.Run("FileNew")
+      $hset = $hwp.HParameterSet.HInsertFile
+      $hwp.HAction.GetDefault("InsertFile", $hset.HSet)
+      $hset.FileName = $tmpIn
+      $hset.KeepSection = 1
+      $opened = $hwp.HAction.Execute("InsertFile", $hset.HSet)
+    } else {
+      $opened = $hwp.Open($tmpIn, "", "")
+    }
+    
     if (-not $opened) { throw "Failed to open input file ($srcExt)" }
     $saved = $hwp.SaveAs($tmpOut, $FORMAT[$target], "")
     if (-not $saved) { throw "Failed to save/convert file (target=$target)" }
