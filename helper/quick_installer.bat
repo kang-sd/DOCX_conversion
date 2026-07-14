@@ -1,6 +1,6 @@
 @echo off
 echo ==========================================================
-#  Local Document Conversion Helper - One-Click Installer
+echo   Local Document Conversion Helper - One-Click Installer
 echo ==========================================================
 echo.
 echo [Progress] Installing helper scripts via PowerShell...
