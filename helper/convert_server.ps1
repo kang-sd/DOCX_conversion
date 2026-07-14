@@ -18,6 +18,13 @@ $FORMAT = @{
 # ---- HWP COM Instance (Lazy creation & Reuse) ----
 $script:Hwp = $null
 function Get-Hwp {
+  if ($null -ne $script:Hwp) {
+    try { 
+      $dummy = $script:Hwp.Version
+    } catch {
+      $script:Hwp = $null
+    }
+  }
   if ($null -eq $script:Hwp) {
     $script:Hwp = New-Object -ComObject "HWPFrame.HwpObject"
     # Register security module registered in registry
@@ -25,6 +32,14 @@ function Get-Hwp {
     try { $script:Hwp.XHwpWindows.Item(0).Visible = $false } catch {}
   }
   return $script:Hwp
+}
+
+function Reset-Hwp {
+  if ($null -ne $script:Hwp) {
+    try { $script:Hwp.Quit() } catch {}
+    try { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($script:Hwp) | Out-Null } catch {}
+    $script:Hwp = $null
+  }
 }
 
 # ---- Actual conversion: input bytes -> output bytes ----
@@ -55,7 +70,7 @@ function Convert-Document([byte[]]$bytes, [string]$srcName, [string]$target) {
     if (-not $opened) { throw "Failed to open input file ($srcExt)" }
     $saved = $hwp.SaveAs($tmpOut, $FORMAT[$target], "")
     if (-not $saved) { throw "Failed to save/convert file (target=$target)" }
-    try { $hwp.Clear(1) } catch {}   # Close current doc without saving
+    try { $hwp.Clear(1) } catch { Reset-Hwp }   # Close current doc without saving, reset if failed
     if (-not (Test-Path $tmpOut)) { throw "Output file was not created" }
     return [System.IO.File]::ReadAllBytes($tmpOut)
   }
@@ -126,6 +141,7 @@ while ($listener.IsListening) {
         $resp.Headers["Content-Disposition"] = "attachment"
         $resp.OutputStream.Write($out, 0, $out.Length)
       } catch {
+        Reset-Hwp
         Write-Json $resp 500 @{ error = "$($_.Exception.Message)" }
       }
       $resp.Close(); continue
