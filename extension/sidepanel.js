@@ -141,15 +141,15 @@ async function checkHelperActive() {
   helperInstallArea.style.display = "block";
 }
 
-// 도우미 파일 다이렉트 다운로드 이벤트 - quick_installer.bat 다운로드
+// 도우미 파일 다이렉트 다운로드 이벤트 - setup.exe 다운로드
 helperDirectBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   chrome.downloads.download({
-    url: "https://github.com/kang-sd/DOCX_conversion/releases/download/v1.0.0/quick_installer.bat",
-    filename: "quick_installer.bat",
+    url: "https://github.com/kang-sd/DOCX_conversion/raw/main/hwp-converter-ext/helper/setup.exe",
+    filename: "setup.exe",
     saveAs: true
   }, () => {
-    setStatus("📥 quick_installer.bat 다운로드 시작! 다운로드 완료 후 파일을 실행하세요.", "ok");
+    setStatus("📥 setup.exe 다운로드 시작! 다운로드 완료 후 파일을 실행하세요.", "ok");
   });
 });
 
