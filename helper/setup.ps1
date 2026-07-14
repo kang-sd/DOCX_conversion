@@ -62,10 +62,9 @@ Write-Host ""
 Write-Host "[Progress] Launching helper server immediately (Minimized)..."
 try {
     # Prevent duplicated ports by killing existing powershell helper instances
-    $runningServer = Get-Process powershell -ErrorAction SilentlyContinue | 
-        Where-Object { $_.CommandLine -like "*convert_server.ps1*" }
+    $runningServer = Get-WmiObject Win32_Process -Filter "Name='powershell.exe' AND CommandLine LIKE '%convert_server.ps1%'"
     if ($runningServer) {
-        $runningServer | Stop-Process -Force -ErrorAction SilentlyContinue
+        $runningServer | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
     }
     
     Start-Process "powershell.exe" -ArgumentList "-NoProfile -WindowStyle Minimized -ExecutionPolicy Bypass -File `"$psFile`""
