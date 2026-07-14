@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>문서 변환기 Pro</title>
+    <style>
+        :root {
+            --ink: #1c2b4a;
+            --ink-soft: #3a4b6e;
+            --paper: #fbfaf7;
+            --paper-line: #e4e0d6;
+            --accent: #b5482f;
+            --accent-dim: rgba(181, 72, 47, 0.06);
+            --text: #24262b;
+            --text-dim: #6b6f76;
+            --radius: 10px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            width: 100%;
+            min-width: 320px;
+            background: var(--paper);
+            color: var(--text);
+            font-family: "Pretendard", "Apple SD Gothic Neo", -apple-system, sans-serif;
+            font-size: 13px;
+            -webkit-font-smoothing: antialiased;
+            padding: 0;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--paper-line);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .mark {
+            width: 34px;
+            height: 34px;
+            background: var(--accent);
+            color: #ffffff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .titles h1 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.2;
+        }
+
+        .titles p {
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 1px;
+        }
+
+        .header-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 4px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .icon-btn:hover {
+            background: var(--accent-dim);
+        }
+
+        .container {
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--paper-line);
+            border-radius: 8px;
+            background: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-dim);
+            text-align: center;
+        }
+
+        .mode-btn.active {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .mode-btn:hover:not(.active) {
+            border-color: var(--ink-soft);
+            background: #f4f6fa;
+        }
+
+        .mode-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .ai-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: linear-gradient(135deg, #dbeafe, #ede9fe);
+            border-radius: 6px;
+            font-size: 10px;
+            color: var(--ink-soft);
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--paper-line);
+            border-radius: var(--radius);
+            padding: 24px 16px;
+            text-align: center;
+            background: #ffffff;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .dropzone:hover,
+        .dropzone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        .dropzone.has-file {
+            border-color: var(--ink-soft);
+            background: #f4f6fa;
+        }
+
+        .dropzone-icon {
+            font-size: 28px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .dropzone p {
+            font-size: 12px;
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .dropzone span {
+            font-size: 10px;
+            color: var(--text-dim);
+            display: block;
+            margin-top: 4px;
+            word-break: break-all;
+        }
+
+        .format-selector {
+            background: #ffffff;
+            padding: 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--paper-line);
+        }
+
+        .format-selector label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .format-selector select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--paper-line);
+            background: var(--paper);
+            font-size: 12px;
+            font-family: inherit;
+            color: var(--text);
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b6f76' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        .convert-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--ink);
+            color: #ffffff;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .convert-btn:hover {
+            background: var(--accent);
+        }
+
+        .convert-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status-box {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-align: center;
+            line-height: 1.5;
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 6px;
+            word-break: keep-all;
+            min-height: 32px;
+        }
+
+        /* 설정 패널 */
+        .settings-panel {
+            background: #ffffff;
+            border-bottom: 1px solid var(--paper-line);
+            padding: 12px 16px;
+            display: none;
+        }
+
+        .settings-content h3 {
+            font-size: 13px;
+            color: var(--ink);
+            margin-bottom: 6px;
+        }
+
+        .settings-desc {
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--paper-line);
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: monospace;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .api-key-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(181, 72, 47, 0.1);
+        }
+
+        .settings-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--ink);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent);
+        }
+
+        .btn-secondary {
+            background: var(--paper-line);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #d0ccc2;
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+
+        .api-key-status {
+            margin-top: 6px;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .api-key-status.success {
+            display: block;
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .api-key-status.error {
+            display: block;
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .api-key-status.info {
+            display: block;
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .settings-info {
+            margin-top: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 9px;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .settings-info a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* 구글 문서 감지 배너 */
+        .doc-detected {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: 8px;
+            font-size: 11px;
+        }
+
+        .doc-detected .doc-btn {
+            margin-left: auto;
+            padding: 6px 12px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .doc-detected .doc-btn:hover {
+            background: #1c2b4a;
+        }
+
+        /* 프로그레스 바 */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--paper-line);
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #6366f1);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 헤더 -->
+    <div class="header">
+        <div class="mark">文</div>
+        <div class="titles">
+            <h1>문서 변환기</h1>
+            <p>HWPX · DOCX · MD · HTML · TXT (서버 없이 브라우저에서 변환)</p>
+        </div>
+    </div>
+
+    <!-- 메인 -->
+    <div class="container">
+        <!-- 드롭존 -->
+        <div class="dropzone" id="dropzone">
+            <input type="file" id="fileInput" style="display:none;"
+                accept=".md,.markdown,.txt,.html,.htm,.docx,.hwpx,.doc" />
+            <span class="dropzone-icon">📥</span>
+            <p id="dropzoneLabel">파일을 드래그 또는 클릭</p>
+            <span id="fileName">지원 입력: md, txt, html, docx, hwpx</span>
+        </div>
+
+        <!-- 포맷 선택 -->
+        <div class="format-selector">
+            <label for="targetFormat">변환 포맷</label>
+            <select id="targetFormat">
+                <option value="hwpx">아래아한글 (.hwpx)</option>
+                <option value="docx">MS 워드 (.docx)</option>
+                <option value="md">마크다운 (.md)</option>
+                <option value="html">HTML (.html)</option>
+                <option value="txt">텍스트 (.txt)</option>
+            </select>
+        </div>
+
+        <!-- 진행 바 -->
+        <div class="progress-bar" id="progressBar">
+            <div class="fill" id="progressFill"></div>
+        </div>
+
+        <!-- 변환 버튼 -->
+        <button class="convert-btn" id="convertBtn">📄 변환 시작</button>
+
+        <!-- 상태 -->
+        <div class="status-box" id="status">변환할 파일을 선택하세요. (레거시 .hwp / .pdf 원본 읽기는 브라우저 단독 미지원)</div>
+    </div>
+
+    <!-- 변환 라이브러리 (로드 순서 중요: JSZip → 빌더 → 메인) -->
+    <script src="vendor/jszip.min.js"></script>
+    <script src="hwpx-builder.js"></script>
+    <script src="docx-builder.js"></script>
+    <script src="sidepanel.js"></script>
+</body>
+
+</html>

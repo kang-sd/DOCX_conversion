@@ -1,0 +1,48 @@
+name: Windows 실행파일 빌드
+
+# main 브랜치에 push 되거나 태그(v*)를 만들면 자동으로 Windows용 server.exe를 빌드합니다.
+# GitHub이 제공하는 windows-latest 러너는 인터넷 제한이 없어서,
+# 로컬 샌드박스에서 막혔던 Node.js 바이너리 다운로드가 여기서는 정상 동작합니다.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+  workflow_dispatch: {}
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: pkg로 단일 exe 패키징
+        run: npx pkg . -t node18-win-x64 --output dist/server.exe
+
+      - name: pandoc(Windows) 다운로드
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/jgm/pandoc/releases/download/3.10/pandoc-3.10-windows-x86_64.zip" -OutFile pandoc.zip
+          Expand-Archive pandoc.zip -DestinationPath pandoc_extracted
+          Copy-Item (Get-ChildItem -Recurse -Filter pandoc.exe -Path pandoc_extracted)[0].FullName dist/pandoc.exe
+
+      - name: 설치 스크립트 동봉
+        run: Copy-Item ../installer/install.ps1 dist/install.ps1
+
+      - name: 배포용 zip 생성
+        run: Compress-Archive -Path dist/* -DestinationPath hwp-converter-windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hwp-converter-windows
+          path: backend/hwp-converter-windows.zip

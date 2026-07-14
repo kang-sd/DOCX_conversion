@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "문서 변환기 (HWPX/DOCX/MD/HTML/TXT)",
+  "version": "3.0.0",
+  "description": "설치만 하면 서버 없이 브라우저 안에서 문서를 아래아한글(HWPX)·워드(DOCX)·마크다운·HTML·텍스트로 변환합니다.",
+  "action": {
+    "default_title": "문서 변환기 - 사이드바 열기"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "permissions": [
+    "downloads",
+    "storage",
+    "sidePanel"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/template.hwpx"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

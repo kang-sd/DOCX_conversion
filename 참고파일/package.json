@@ -1,0 +1,20 @@
+{
+  "name": "hwp-converter-extension",
+  "version": "0.1.0",
+  "description": "Chrome extension to convert documents standalone",
+  "main": "popup.js",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "kordoc": "^3.18.1",
+    "jszip": "^3.10.1",
+    "marked": "^15.0.0",
+    "html-docx-js": "^0.3.1",
+    "buffer": "^6.0.3",
+    "pdfjs-dist": "^4.10.38"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2"
+  }
+}

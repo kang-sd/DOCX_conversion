@@ -1,0 +1,25 @@
+# 의존성/빌드 산출물 (재생성 가능)
+node_modules/
+**/node_modules/
+**/.venv/
+__pycache__/
+*.pyc
+
+# 대용량 검증 샘플 (배포 불필요)
+참고파일/검증샘플/
+*.hwp
+# 단, 확장 동봉 템플릿은 포함해야 하므로 예외
+!extension/assets/template.hwpx
+
+# 로그/임시
+*.log
+.DS_Store
+Thumbs.db
+
+# 혹시 모를 비밀정보 (절대 커밋 금지)
+*.env
+.env*
+**/service-account*.json
+**/api_vault*.json
+*secret*
+*token*
