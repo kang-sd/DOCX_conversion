@@ -143,7 +143,7 @@ async function checkHelperActive() {
 
 // 도우미 설치파일(.bat) 다운로드 — SmartScreen 차단 없는 원클릭 설치
 // (raw 스크립트를 받아 실행: 서명된 setup.ps1이 도우미를 설치/자동실행)
-const INSTALLER_URL = "https://raw.githubusercontent.com/kang-sd/DOCX_conversion/main/hwp-converter-ext/helper/quick_installer.bat";
+const INSTALLER_URL = "https://raw.githubusercontent.com/kang-sd/DOCX_conversion/main/helper/quick_installer.bat";
 let helperPollTimer = null;
 
 helperDirectBtn.addEventListener("click", (e) => {

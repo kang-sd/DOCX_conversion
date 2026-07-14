@@ -15,7 +15,7 @@ $batFile = Join-Path $installDir "setup.bat"
 Write-Host "[Info] Installation Directory: $installDir"
 
 # Fetch latest helper script directly from GitHub repository (Bypasses local SmartScreen block tag)
-$rawUrlBase = "https://raw.githubusercontent.com/kang-sd/DOCX_conversion/main/hwp-converter-ext/helper"
+$rawUrlBase = "https://raw.githubusercontent.com/kang-sd/DOCX_conversion/main/helper"
 Write-Host "[Progress] Fetching helper files from repository..."
 try {
     Invoke-WebRequest -Uri "$rawUrlBase/convert_server.ps1" -OutFile $psFile -UseBasicParsing -ErrorAction Stop
