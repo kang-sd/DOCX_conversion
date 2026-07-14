@@ -490,10 +490,18 @@
     <!-- 메인 -->
     <div class="container">
         <!-- 도우미 연결 상태 배너 -->
-        <div class="helper-banner checking" id="helperBanner">
-            <span id="helperStatusIcon">🔍</span>
-            <span id="helperStatusText">변환 도우미 상태 확인 중...</span>
-            <button id="helperDownloadBtn" class="banner-btn" style="display: none;">도우미 설치</button>
+        <div class="helper-banner checking" id="helperBanner" style="flex-direction: column; align-items: stretch; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="helperStatusIcon">🔍</span>
+                <span id="helperStatusText">변환 도우미 상태 확인 중...</span>
+            </div>
+            <div id="helperInstallArea" style="display: none; margin-top: 6px; border-top: 1px solid #e8eaed; padding-top: 6px;">
+                <p style="font-size: 9px; margin-bottom: 4px; font-weight: bold; color: inherit;">PowerShell에 붙여넣어 실행하세요 (자동 설치):</p>
+                <div style="display: flex; gap: 4px; align-items: center;">
+                    <input type="text" id="helperCmdText" readonly value="irm https://raw.githubusercontent.com/kang-sd/DOCX_conversion/main/hwp-converter-ext/helper/setup.ps1 | iex" style="flex: 1; font-size: 8px; font-family: monospace; padding: 4px; border: 1px solid var(--paper-line); border-radius: 4px; background: #fff; color: #333; outline: none;" />
+                    <button id="helperCopyBtn" class="banner-btn" style="padding: 4px 8px; font-size: 9px; white-space: nowrap; margin-left: 0;">복사</button>
+                </div>
+            </div>
         </div>
 
         <!-- 드롭존 -->

@@ -19,7 +19,9 @@ let isHelperActive = false;
 const helperBanner = document.getElementById("helperBanner");
 const helperStatusIcon = document.getElementById("helperStatusIcon");
 const helperStatusText = document.getElementById("helperStatusText");
-const helperDownloadBtn = document.getElementById("helperDownloadBtn");
+const helperInstallArea = document.getElementById("helperInstallArea");
+const helperCmdText = document.getElementById("helperCmdText");
+const helperCopyBtn = document.getElementById("helperCopyBtn");
 
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
@@ -109,7 +111,7 @@ async function checkHelperActive() {
   helperBanner.className = "helper-banner checking";
   helperStatusIcon.textContent = "🔍";
   helperStatusText.textContent = "변환 도우미 상태 확인 중...";
-  helperDownloadBtn.style.display = "none";
+  helperInstallArea.style.display = "none";
 
   try {
     const controller = new AbortController();
@@ -137,18 +139,18 @@ async function checkHelperActive() {
   helperBanner.className = "helper-banner disconnected";
   helperStatusIcon.textContent = "⚠️";
   helperStatusText.textContent = "오프라인 텍스트 모드 (고품질 원본급 변환은 도우미 필요)";
-  helperDownloadBtn.style.display = "inline-block";
+  helperInstallArea.style.display = "block";
 }
 
-// 도우미 다운로드 버튼 이벤트 - 릴리즈 에셋 다이렉트 다운로드 진행
-helperDownloadBtn.addEventListener("click", (e) => {
+// 도우미 명령어 복사 이벤트 - 클립보드 복사 진행
+helperCopyBtn.addEventListener("click", (e) => {
   e.stopPropagation();
-  chrome.downloads.download({
-    url: "https://github.com/kang-sd/DOCX_conversion/releases/download/v1.0.0/helper.zip",
-    filename: "helper.zip",
-    saveAs: true
-  }, () => {
-    setStatus("📥 helper.zip 다운로드 완료! 압축을 풀고 setup.bat을 실행하세요.", "ok");
+  helperCmdText.select();
+  navigator.clipboard.writeText(helperCmdText.value).then(() => {
+    setStatus("📋 명령어가 복사되었습니다! PowerShell 창을 열고 우클릭(붙여넣기) 후 엔터를 치세요.", "ok");
+  }).catch(err => {
+    console.error("복사 실패:", err);
+    setStatus("🚫 복사 실패. 텍스트를 직접 마우스 드래그로 복사하세요.", "error");
   });
 });
 

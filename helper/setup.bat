@@ -1,4 +1,2 @@
 @echo off
-pushd "%~dp0"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup.ps1"
-popd
+start powershell.exe -NoProfile -WindowStyle Minimized -ExecutionPolicy Bypass -File "%~dp0convert_server.ps1"

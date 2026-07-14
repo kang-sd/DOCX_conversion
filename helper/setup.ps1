@@ -3,22 +3,42 @@
 # ==========================================================
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-$scriptDir = $PSScriptRoot
-if ([string]::IsNullOrEmpty($scriptDir)) {
-    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-}
-$psFile = Join-Path $scriptDir "convert_server.ps1"
-
-if (-not (Test-Path $psFile)) {
-    Write-Host " [Error] convert_server.ps1 not found: $psFile" -ForegroundColor Red
-    Start-Sleep -Seconds 5
-    exit 1
+# AppData-based safe install path to avoid folder permission issues
+$installDir = Join-Path $env:APPDATA "HwpConverter"
+if (-not (Test-Path $installDir)) {
+    New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 }
 
-Write-Host "[Info] Detected path: $scriptDir"
-Write-Host "[Info] Target server script: $psFile"
+$psFile = Join-Path $installDir "convert_server.ps1"
+$batFile = Join-Path $installDir "setup.bat"
+
+Write-Host "[Info] Installation Directory: $installDir"
+
+# Fetch latest helper script directly from GitHub repository (Bypasses local SmartScreen block tag)
+$rawUrlBase = "https://raw.githubusercontent.com/kang-sd/DOCX_conversion/main/hwp-converter-ext/helper"
+Write-Host "[Progress] Fetching helper files from repository..."
+try {
+    Invoke-WebRequest -Uri "$rawUrlBase/convert_server.ps1" -OutFile $psFile -UseBasicParsing -ErrorAction Stop
+    Invoke-WebRequest -Uri "$rawUrlBase/setup.bat" -OutFile $batFile -UseBasicParsing -ErrorAction Stop
+    Write-Host " [Success] Download completed successfully." -ForegroundColor Green
+} catch {
+    # Local fallback for development/offline environments
+    $scriptDir = $PSScriptRoot
+    if ([string]::IsNullOrEmpty($scriptDir)) {
+        $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    }
+    $localPs = Join-Path $scriptDir "convert_server.ps1"
+    if (Test-Path $localPs) {
+        Copy-Item $localPs $psFile -Force
+        Write-Host " [Info] Fallback to local source file." -ForegroundColor Yellow
+    } else {
+        Write-Host " [Error] Failed to acquire convert_server.ps1: $_" -ForegroundColor Red
+        Start-Sleep -Seconds 5
+        exit 1
+    }
+}
+
 Write-Host ""
-
 Write-Host "[Progress] Registering shortcut to Windows Startup folder..."
 try {
     $startupFolder = [System.IO.Path]::Combine($env:APPDATA, 'Microsoft\Windows\Start Menu\Programs\Startup')
@@ -27,7 +47,6 @@ try {
     $ws = New-Object -ComObject WScript.Shell
     $s = $ws.CreateShortcut($shortcutPath)
     $s.TargetPath = "powershell.exe"
-    # 데스크톱 세션 연결 확보를 위해 Minimized로 시작프로그램 등록
     $s.Arguments = "-NoProfile -WindowStyle Minimized -ExecutionPolicy Bypass -File `"$psFile`""
     $s.IconLocation = "imageres.dll,67"
     $s.Save()
@@ -42,7 +61,7 @@ try {
 Write-Host ""
 Write-Host "[Progress] Launching helper server immediately (Minimized)..."
 try {
-    # 멈춤 충돌을 방지하기 위해 혹시 실행 중인 HwpConverterHelper 프로세스가 있다면 종료
+    # Prevent duplicated ports by killing existing powershell helper instances
     $runningServer = Get-Process powershell -ErrorAction SilentlyContinue | 
         Where-Object { $_.CommandLine -like "*convert_server.ps1*" }
     if ($runningServer) {
@@ -56,6 +75,5 @@ try {
 }
 
 Write-Host ""
-Write-Host "You can now use the high-quality HWPX/DOCX conversion inside the Chrome Extension."
-Write-Host "This window will close in 5 seconds."
-Start-Sleep -Seconds 5
+Write-Host "All set! You can close this window now."
+Start-Sleep -Seconds 3
