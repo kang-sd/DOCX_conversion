@@ -141,17 +141,37 @@ async function checkHelperActive() {
   helperInstallArea.style.display = "block";
 }
 
-// 도우미 파일 다이렉트 다운로드 이벤트 - setup.exe 다운로드
+// 도우미 설치파일(.bat) 다운로드 — SmartScreen 차단 없는 원클릭 설치
+// (raw 스크립트를 받아 실행: 서명된 setup.ps1이 도우미를 설치/자동실행)
+const INSTALLER_URL = "https://raw.githubusercontent.com/kang-sd/DOCX_conversion/main/hwp-converter-ext/helper/quick_installer.bat";
+let helperPollTimer = null;
+
 helperDirectBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   chrome.downloads.download({
-    url: "https://github.com/kang-sd/DOCX_conversion/releases/download/v1.0.0/setup.exe",
-    filename: "setup.exe",
-    saveAs: true
+    url: INSTALLER_URL,
+    filename: "문서변환도우미_설치.bat",
+    saveAs: false
   }, () => {
-    setStatus("📥 setup.exe 다운로드 시작! 다운로드 완료 후 파일을 실행하세요.", "ok");
+    setStatus("📥 설치파일을 받았어요! 화면 아래(또는 다운로드 폴더)의 파일을 더블클릭하세요.", "ok");
+    // 설치가 끝나면 자동으로 초록불이 되도록 60초간 재확인
+    startHelperPolling(60);
   });
 });
+
+// 설치 완료를 자동 감지 (몇 초마다 도우미 상태 재확인)
+function startHelperPolling(seconds) {
+  if (helperPollTimer) clearInterval(helperPollTimer);
+  let elapsed = 0;
+  helperPollTimer = setInterval(async () => {
+    elapsed += 3;
+    await checkHelperActive();
+    if (isHelperActive || elapsed >= seconds) {
+      clearInterval(helperPollTimer);
+      helperPollTimer = null;
+    }
+  }, 3000);
+}
 
 // ===== 입력 파싱: { plain, html, md } (오프라인 모드 전용) =====
 function escapeHtml(s) {
