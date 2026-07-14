@@ -72,7 +72,7 @@ function Write-Json($resp, [int]$code, $obj) {
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add($PREFIX)
 try { $listener.Start() } catch {
-  Write-Host "Cannot bind to port $PORT: $($_.Exception.Message)"
+  Write-Host "Cannot bind to port ${PORT}: $($_.Exception.Message)"
   exit 1
 }
 Write-Host "문서 변환 도우미 실행 중 -> $PREFIX  (종료: Ctrl+C)"
