@@ -140,10 +140,16 @@ async function checkHelperActive() {
   helperDownloadBtn.style.display = "inline-block";
 }
 
-// 도우미 다운로드 버튼 이벤트 - 깃허브 릴리즈 페이지 오픈
+// 도우미 다운로드 버튼 이벤트 - 릴리즈 에셋 다이렉트 다운로드 진행
 helperDownloadBtn.addEventListener("click", (e) => {
   e.stopPropagation();
-  window.open("https://github.com/kang-sd/DOCX_conversion/releases");
+  chrome.downloads.download({
+    url: "https://github.com/kang-sd/DOCX_conversion/releases/download/v1.0.0/helper.zip",
+    filename: "helper.zip",
+    saveAs: true
+  }, () => {
+    setStatus("📥 helper.zip 다운로드 완료! 압축을 풀고 setup.bat을 실행하세요.", "ok");
+  });
 });
 
 // ===== 입력 파싱: { plain, html, md } (오프라인 모드 전용) =====
