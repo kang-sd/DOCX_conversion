@@ -145,7 +145,7 @@ async function checkHelperActive() {
 helperDirectBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   chrome.downloads.download({
-    url: "https://github.com/kang-sd/DOCX_conversion/raw/main/hwp-converter-ext/helper/setup.exe",
+    url: "https://github.com/kang-sd/DOCX_conversion/releases/download/v1.0.0/setup.exe",
     filename: "setup.exe",
     saveAs: true
   }, () => {
