@@ -22,6 +22,7 @@ const helperStatusText = document.getElementById("helperStatusText");
 const helperInstallArea = document.getElementById("helperInstallArea");
 const helperCmdText = document.getElementById("helperCmdText");
 const helperCopyBtn = document.getElementById("helperCopyBtn");
+const helperDirectBtn = document.getElementById("helperDirectBtn");
 
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
@@ -151,6 +152,18 @@ helperCopyBtn.addEventListener("click", (e) => {
   }).catch(err => {
     console.error("복사 실패:", err);
     setStatus("🚫 복사 실패. 텍스트를 직접 마우스 드래그로 복사하세요.", "error");
+  });
+});
+
+// 도우미 파일 다이렉트 다운로드 이벤트 - quick_installer.bat 다운로드
+helperDirectBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  chrome.downloads.download({
+    url: "https://github.com/kang-sd/DOCX_conversion/releases/download/v1.0.0/quick_installer.bat",
+    filename: "quick_installer.bat",
+    saveAs: true
+  }, () => {
+    setStatus("📥 quick_installer.bat 다운로드 완료! 다운로드 폴더에서 실행하세요.", "ok");
   });
 });
 

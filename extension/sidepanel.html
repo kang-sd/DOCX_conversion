@@ -496,10 +496,16 @@
                 <span id="helperStatusText">변환 도우미 상태 확인 중...</span>
             </div>
             <div id="helperInstallArea" style="display: none; margin-top: 6px; border-top: 1px solid #e8eaed; padding-top: 6px;">
-                <p style="font-size: 9px; margin-bottom: 4px; font-weight: bold; color: inherit;">PowerShell에 붙여넣어 실행하세요 (자동 설치):</p>
-                <div style="display: flex; gap: 4px; align-items: center;">
-                    <input type="text" id="helperCmdText" readonly value="irm https://raw.githubusercontent.com/kang-sd/DOCX_conversion/main/hwp-converter-ext/helper/setup.ps1 | iex" style="flex: 1; font-size: 8px; font-family: monospace; padding: 4px; border: 1px solid var(--paper-line); border-radius: 4px; background: #fff; color: #333; outline: none;" />
-                    <button id="helperCopyBtn" class="banner-btn" style="padding: 4px 8px; font-size: 9px; white-space: nowrap; margin-left: 0;">복사</button>
+                <div style="margin-bottom: 6px;">
+                    <p style="font-size: 9px; margin-bottom: 4px; font-weight: bold; color: inherit;">방법 A. 명령어 복사 실행 (추천):</p>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <input type="text" id="helperCmdText" readonly value="irm https://raw.githubusercontent.com/kang-sd/DOCX_conversion/main/hwp-converter-ext/helper/setup.ps1 | iex" style="flex: 1; font-size: 8px; font-family: monospace; padding: 4px; border: 1px solid var(--paper-line); border-radius: 4px; background: #fff; color: #333; outline: none;" />
+                        <button id="helperCopyBtn" class="banner-btn" style="padding: 4px 8px; font-size: 9px; white-space: nowrap; margin-left: 0;">복사</button>
+                    </div>
+                </div>
+                <div style="border-top: 1px dashed #e8eaed; padding-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <p style="font-size: 9px; font-weight: bold; color: inherit; margin: 0;">방법 B. 단일 설치 파일 직접 실행:</p>
+                    <button id="helperDirectBtn" class="banner-btn" style="padding: 4px 8px; font-size: 9px; white-space: nowrap; margin-left: 0; background: #1a73e8; color: #fff; border: 1px solid #1a73e8;">설치파일 받기</button>
                 </div>
             </div>
         </div>
