@@ -1,20 +1,26 @@
 /**
- * sidepanel.js — 문서 변환기 (서버·AI 불필요, 브라우저 단독)
+ * sidepanel.js — 문서 변환기 (A+B 하이브리드 모드)
  *
- * 파이프라인:
- *   1) 입력 파일에서 { plain, html } 추출 (md/txt/html/docx/hwpx)
- *   2) 목표 포맷으로 렌더링 (hwpx=HwpxBuilder, docx=html-docx, md/html/txt=직접)
- *
- * 의존 전역:
- *   window.JSZip        (vendor/jszip.min.js)   — docx/hwpx 입력 파싱
- *   window.HwpxBuilder  (hwpx-builder.js)        — HWPX 생성
- *   window.DocxBuilder  (docx-builder.js)        — 네이티브 DOCX 생성
+ * 동작 시나리오:
+ *   1) 기동 시 http://127.0.0.1:52700/health 로컬 도우미 확인
+ *   2) 연결 성공: "고품질(로컬 도우미) 변환 모드"로 자동 활성화.
+ *      - HWP, DOC, PDF 등 입력 확장자 자동 추가 허용.
+ *      - 모든 변환 요청을 로컬 한/글COM 서버 API(/convert)로 라우팅하여 원본 서식 완벽 보존.
+ *   3) 연결 실패: "일반(오프라인) 변환 모드"로 동작.
+ *      - JSZip, HwpxBuilder, DocxBuilder를 통한 브라우저 단독 텍스트/마크다운 추출 변환.
+ *      - UI 배너를 통해 고품질 변환을 위한 도우미 다운로드 안내 버튼 제공.
  */
 
 // ===== 상태 =====
 let selectedFile = null;
+let isHelperActive = false;
 
 // ===== DOM =====
+const helperBanner = document.getElementById("helperBanner");
+const helperStatusIcon = document.getElementById("helperStatusIcon");
+const helperStatusText = document.getElementById("helperStatusText");
+const helperDownloadBtn = document.getElementById("helperDownloadBtn");
+
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
 const fileNameEl = document.getElementById("fileName");
@@ -26,7 +32,7 @@ const progressBar = document.getElementById("progressBar");
 const progressFill = document.getElementById("progressFill");
 
 const INPUT_EXTS = ["md", "markdown", "txt", "html", "htm", "docx", "hwpx"];
-// 브라우저 단독으로 원본을 읽을 수 없는 포맷(안내용)
+// 브라우저 단독으로 원본을 읽을 수 없는 포맷(도우미 미작동 시 안내용)
 const UNSUPPORTED_INPUT = ["hwp", "pdf"];
 // 구버전 바이너리 포맷 — 저장변환 안내
 const LEGACY_INPUT = { doc: "docx", ppt: "pptx", xls: "xlsx" };
@@ -52,18 +58,30 @@ function extOf(name) {
 
 function setFile(file) {
   const ext = extOf(file.name);
-  if (LEGACY_INPUT[ext]) {
-    setStatus(`🚫 구버전 .${ext}는 지원되지 않습니다. 워드/오피스에서 "다른 이름으로 저장 → .${LEGACY_INPUT[ext]}"로 저장한 뒤 올려주세요.`, "error");
-    return;
+
+  if (isHelperActive) {
+    // 도우미 구동 중일 때는 한글이 핸들링할 수 있는 파일 대부분 허용
+    const ALLOWED = ["md", "markdown", "txt", "html", "htm", "docx", "hwpx", "hwp", "doc", "pdf"];
+    if (!ALLOWED.includes(ext)) {
+      setStatus("🚫 지원하지 않는 입력 포맷입니다. (hwp, doc, pdf, md, txt, docx, hwpx 등)", "error");
+      return;
+    }
+  } else {
+    // 오프라인 모드일 때 기존 필터링 규칙 적용
+    if (LEGACY_INPUT[ext]) {
+      setStatus(`🚫 구버전 .${ext}는 지원되지 않습니다. 워드/오피스에서 "다른 이름으로 저장 → .${LEGACY_INPUT[ext]}"로 저장한 뒤 올려주세요.`, "error");
+      return;
+    }
+    if (UNSUPPORTED_INPUT.includes(ext)) {
+      setStatus(`🚫 .${ext} 원본 읽기는 브라우저 단독으로 지원되지 않습니다. (고품질 한글 변환 도우미가 켜져 있으면 읽기 가능)`, "error");
+      return;
+    }
+    if (!INPUT_EXTS.includes(ext)) {
+      setStatus("🚫 지원하지 않는 입력 포맷입니다. (md, txt, html, docx, hwpx)", "error");
+      return;
+    }
   }
-  if (UNSUPPORTED_INPUT.includes(ext)) {
-    setStatus(`🚫 .${ext} 원본 읽기는 브라우저 단독으로 지원되지 않습니다. (생성은 가능)`, "error");
-    return;
-  }
-  if (!INPUT_EXTS.includes(ext)) {
-    setStatus("🚫 지원하지 않는 입력 포맷입니다. (md, txt, html, docx, hwpx)", "error");
-    return;
-  }
+
   selectedFile = file;
   fileNameEl.textContent = file.name;
   dropzoneLabel.textContent = "다른 파일 선택하려면 클릭";
@@ -85,14 +103,56 @@ function hideProgress() {
   progressFill.style.width = "0%";
 }
 
-// ===== 입력 파싱: { plain, html, md } =====
+// ===== 도우미 상태 체크 =====
+async function checkHelperActive() {
+  isHelperActive = false;
+  helperBanner.className = "helper-banner checking";
+  helperStatusIcon.textContent = "🔍";
+  helperStatusText.textContent = "변환 도우미 상태 확인 중...";
+  helperDownloadBtn.style.display = "none";
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2초 타임아웃
+    const res = await fetch("http://127.0.0.1:52700/health", { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status === "ok") {
+        isHelperActive = true;
+        helperBanner.className = "helper-banner connected";
+        helperStatusIcon.textContent = "✅";
+        helperStatusText.textContent = `로컬 한글 변환 도우미 연결됨 (엔진: 한글 2022+)`;
+        setStatus("✅ 고품질 변환 준비 완료 (도우미 연동)", "ok");
+        return;
+      }
+    }
+  } catch (err) {
+    console.log("로컬 도우미 서버 연결 실패 (일반 모드로 전환):", err.message);
+  }
+
+  // 도우미 연결 실패 시 (오프라인 모드)
+  isHelperActive = false;
+  helperBanner.className = "helper-banner disconnected";
+  helperStatusIcon.textContent = "⚠️";
+  helperStatusText.textContent = "오프라인 텍스트 모드 (고품질 원본급 변환은 도우미 필요)";
+  helperDownloadBtn.style.display = "inline-block";
+}
+
+// 도우미 다운로드 버튼 이벤트 - 깃허브 릴리즈 페이지 오픈
+helperDownloadBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  window.open("https://github.com/kang-sd/DOCX_conversion/releases");
+});
+
+// ===== 입력 파싱: { plain, html, md } (오프라인 모드 전용) =====
 function escapeHtml(s) {
   return String(s)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
 
-// 아주 가벼운 마크다운 → HTML (제목/목록/굵게/기울임/단락)
 function markdownToHtml(md) {
   const lines = String(md).replace(/\r\n?/g, "\n").split("\n");
   const out = [];
@@ -124,7 +184,6 @@ function markdownToHtml(md) {
   return out.join("\n");
 }
 
-// HTML → 블록 단위 평문
 function htmlToPlain(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const blocks = doc.body.querySelectorAll("h1,h2,h3,h4,h5,h6,p,li,td,th,pre,blockquote");
@@ -140,13 +199,11 @@ function htmlToPlain(html) {
   return lines.join("\n");
 }
 
-// DOCX(zip)에서 텍스트 추출 → 단락 배열
 async function docxToPlain(file) {
   const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
   const f = zip.file("word/document.xml");
-  if (!f) throw new Error("DOCX 구조를 읽을 수 없습니다 (word/document.xml 없음).");
+  if (!f) throw new Error("DOCX 구조를 읽을 수 없습니다.");
   const xml = await f.async("string");
-  // 단락(<w:p>) 단위로 나누고 각 단락 내 <w:t> 텍스트를 이어붙임
   const paras = xml.split(/<w:p[ >]/).slice(1).map((chunk) => {
     const texts = chunk.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g) || [];
     return texts.map((m) => m.replace(/<[^>]+>/g, "")).join("")
@@ -155,11 +212,10 @@ async function docxToPlain(file) {
   return paras.filter((p) => p.trim()).join("\n");
 }
 
-// HWPX(zip)에서 텍스트 추출 → 단락 배열 (<hp:t>)
 async function hwpxToPlain(file) {
   const zip = await window.JSZip.loadAsync(await file.arrayBuffer());
   const secNames = Object.keys(zip.files).filter((n) => /^Contents\/section\d+\.xml$/i.test(n)).sort();
-  if (!secNames.length) throw new Error("HWPX 구조를 읽을 수 없습니다 (section 없음).");
+  if (!secNames.length) throw new Error("HWPX 구조를 읽을 수 없습니다.");
   const lines = [];
   for (const name of secNames) {
     const xml = await zip.file(name).async("string");
@@ -174,7 +230,6 @@ async function hwpxToPlain(file) {
   return lines.join("\n");
 }
 
-// 입력 파일 → 정규화 표현
 async function readInput(file, ext) {
   if (ext === "md" || ext === "markdown") {
     const md = await file.text();
@@ -200,7 +255,7 @@ async function readInput(file, ext) {
   throw new Error("지원하지 않는 입력 포맷입니다.");
 }
 
-// ===== 출력 렌더링 =====
+// ===== 출력 렌더링 (오프라인 모드 전용) =====
 function fullHtml(bodyHtml, title) {
   return `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>${escapeHtml(title || "문서")}</title>
 <style>body{font-family:"함초롬바탕","맑은 고딕",serif;line-height:1.6;margin:40px;}
@@ -211,20 +266,17 @@ ${bodyHtml}
 }
 
 async function renderOutput(input, target, title) {
-  // 진짜 HWPX
   if (target === "hwpx") {
     if (input.kind === "md") return await window.HwpxBuilder.fromMarkdown(input.md, title);
     if (input.kind === "html") return await window.HwpxBuilder.fromHtml(input.html, title);
     return await window.HwpxBuilder.fromText(input.plain, title);
   }
-  // 진짜 네이티브 DOCX (어디서나 열림)
   if (target === "docx") {
     if (input.kind === "md") return await window.DocxBuilder.fromMarkdown(input.md);
     if (input.kind === "html") return await window.DocxBuilder.fromHtml(input.html);
     return await window.DocxBuilder.fromText(input.plain);
   }
   if (target === "md") {
-    // 입력이 md면 원본 유지, 아니면 평문을 md로
     const md = input.kind === "md" ? input.md : input.plain;
     return new Blob([md], { type: "text/markdown;charset=utf-8" });
   }
@@ -249,8 +301,38 @@ convertBtn.addEventListener("click", async () => {
   const outName = `${baseName}.${target}`;
 
   convertBtn.disabled = true;
+  setProgress(20);
   try {
-    // 같은 포맷 → 원본 그대로
+    // 1. 도우미 서버 연결 상태이면 고품질 한글 COM 변환 실행
+    if (isHelperActive) {
+      setStatus("🔄 로컬 도우미를 이용해 고품질 변환 중...", "");
+      setProgress(40);
+
+      // 로컬 CORS 변환 요청
+      const res = await fetch("http://127.0.0.1:52700/convert", {
+        method: "POST",
+        headers: {
+          "X-Target": target,
+          "X-Filename": encodeURIComponent(selectedFile.name)
+        },
+        body: selectedFile
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({ error: "알 수 없는 도우미 에러" }));
+        throw new Error(errJson.error || `서버 에러 (HTTP ${res.status})`);
+      }
+
+      setProgress(75);
+      const blob = await res.blob();
+      setProgress(90);
+      await downloadBlob(blob, outName);
+      setStatus("🎉 원본급 고품질 변환 완료!", "ok");
+      return;
+    }
+
+    // 2. 오프라인 모드일 때
+    // 같은 포맷 → 원본 복제 다운로드
     if (ext === target || (target === "html" && ext === "htm") || (target === "md" && ext === "markdown")) {
       setProgress(60);
       await downloadBlob(new Blob([await selectedFile.arrayBuffer()]), outName);
@@ -258,17 +340,16 @@ convertBtn.addEventListener("click", async () => {
       return;
     }
 
-    setProgress(20);
-    setStatus("🔄 문서 분석 중...", "");
+    setStatus("🔄 문서 분석 중 (오프라인)...", "");
     const input = await readInput(selectedFile, ext);
 
     setProgress(60);
-    setStatus("🔄 변환 중...", "");
+    setStatus("🔄 변환 중 (오프라인)...", "");
     const blob = await renderOutput(input, target, baseName);
 
     setProgress(90);
     await downloadBlob(blob, outName);
-    setStatus("🎉 변환 완료! 다운로드를 시작합니다.", "ok");
+    setStatus("🎉 변환 완료(텍스트 수준)! 고품질 변환을 원하시면 도우미를 실행하세요.", "ok");
   } catch (err) {
     console.error(err);
     setStatus("❌ " + err.message, "error");
@@ -288,4 +369,7 @@ function downloadBlob(blob, filename) {
   });
 }
 
-console.log("문서 변환기 사이드바 로드 완료 (서버·AI 없음)");
+// 초기화 시 헬스체크 실행
+document.addEventListener("DOMContentLoaded", checkHelperActive);
+
+console.log("문서 변환기 사이드바 로드 완료 (A+B 하이브리드 아키텍처)");

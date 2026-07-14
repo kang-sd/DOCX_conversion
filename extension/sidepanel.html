@@ -433,6 +433,47 @@
             transition: width 0.3s ease;
             width: 0%;
         }
+
+        /* 도우미 배너 스타일 */
+        .helper-banner {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .helper-banner.connected {
+            background-color: #e6f4ea;
+            color: #137333;
+            border: 1px solid #ceead6;
+        }
+        .helper-banner.disconnected {
+            background-color: #fce8e6;
+            color: #c5221f;
+            border: 1px solid #fad2cf;
+        }
+        .helper-banner.checking {
+            background-color: #f1f3f4;
+            color: #5f6368;
+            border: 1px solid #e8eaed;
+        }
+        .helper-banner .banner-btn {
+            margin-left: auto;
+            padding: 4px 8px;
+            background-color: var(--ink);
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .helper-banner .banner-btn:hover {
+            background-color: var(--accent);
+        }
     </style>
 </head>
 
@@ -448,6 +489,13 @@
 
     <!-- 메인 -->
     <div class="container">
+        <!-- 도우미 연결 상태 배너 -->
+        <div class="helper-banner checking" id="helperBanner">
+            <span id="helperStatusIcon">🔍</span>
+            <span id="helperStatusText">변환 도우미 상태 확인 중...</span>
+            <button id="helperDownloadBtn" class="banner-btn" style="display: none;">도우미 설치</button>
+        </div>
+
         <!-- 드롭존 -->
         <div class="dropzone" id="dropzone">
             <input type="file" id="fileInput" style="display:none;"
