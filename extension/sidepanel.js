@@ -20,7 +20,8 @@ const helperBanner = document.getElementById("helperBanner");
 const helperStatusIcon = document.getElementById("helperStatusIcon");
 const helperStatusText = document.getElementById("helperStatusText");
 const helperInstallArea = document.getElementById("helperInstallArea");
-const helperDirectBtn = document.getElementById("helperDirectBtn");
+const helperCmdText = document.getElementById("helperCmdText");
+const helperCopyBtn = document.getElementById("helperCopyBtn");
 
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("fileInput");
@@ -141,15 +142,15 @@ async function checkHelperActive() {
   helperInstallArea.style.display = "block";
 }
 
-// 도우미 파일 다이렉트 다운로드 이벤트 - quick_installer.bat 다운로드
-helperDirectBtn.addEventListener("click", (e) => {
+// 도우미 명령어 복사 이벤트 - 클립보드 복사 진행
+helperCopyBtn.addEventListener("click", (e) => {
   e.stopPropagation();
-  chrome.downloads.download({
-    url: "https://github.com/kang-sd/DOCX_conversion/releases/download/v1.0.0/quick_installer.bat",
-    filename: "quick_installer.bat",
-    saveAs: true
-  }, () => {
-    setStatus("📥 quick_installer.bat 다운로드 시작! 다운로드 완료 후 파일을 더블클릭하세요.", "ok");
+  helperCmdText.select();
+  navigator.clipboard.writeText(helperCmdText.value).then(() => {
+    setStatus("📋 명령어가 복사되었습니다! PowerShell 창을 열고 우클릭(붙여넣기) 후 엔터를 치세요.", "ok");
+  }).catch(err => {
+    console.error("복사 실패:", err);
+    setStatus("🚫 복사 실패. 텍스트를 직접 마우스 드래그로 복사하세요.", "error");
   });
 });
 

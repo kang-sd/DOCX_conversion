@@ -495,14 +495,19 @@
                 <span id="helperStatusIcon">🔍</span>
                 <span id="helperStatusText">변환 도우미 상태 확인 중...</span>
             </div>
-            <div id="helperInstallArea" style="display: none; margin-top: 6px; border-top: 1px solid #e8eaed; padding-top: 6px;">
-                <button id="helperDirectBtn" class="banner-btn" style="padding: 6px 16px; font-size: 11px; font-weight: bold; background: #1a73e8; color: #fff; border: 1px solid #1a73e8; border-radius: 4px; cursor: pointer; width: 100%; display: block; margin-left: 0; box-sizing: border-box; text-align: center;">⚡ 도우미 자동 설치하기 (원클릭)</button>
-                <p style="font-size: 9px; margin-top: 6px; color: #c5221f; font-weight: bold; line-height: 1.4; text-align: left; margin-bottom: 0;">
-                    💡 설치 방법:<br/>
-                    1. 위의 [자동 설치] 버튼을 눌러 파일을 받습니다.<br/>
-                    2. 받은 <b>quick_installer.bat</b> 파일을 더블클릭하면 즉시 연결 완료!<br/>
-                    <span style="color: #5f6368; font-weight: normal; font-size: 8px; display: block; margin-top: 2px;">※ 최초 실행 시 파란 창(Windows PC 보호)이 뜨면 <u>'추가 정보' ➔ '실행'</u>을 클릭하세요.</span>
+            <div id="helperInstallArea" style="display: none; margin-top: 6px; border-top: 1px solid #e8eaed; padding-top: 6px; text-align: left;">
+                <p style="font-size: 9.5px; font-weight: bold; color: #c5221f; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
+                    🚨 백신 차단 및 경고창을 피하는 5초 설치법:
                 </p>
+                <div style="display: flex; gap: 4px; align-items: center; margin-bottom: 6px;">
+                    <input type="text" id="helperCmdText" readonly value="irm https://raw.githubusercontent.com/kang-sd/DOCX_conversion/main/hwp-converter-ext/helper/setup.ps1 | iex" style="flex: 1; font-size: 8.5px; font-family: monospace; padding: 5px; border: 1px solid var(--paper-line); border-radius: 4px; background: #fff; color: #333; outline: none;" />
+                    <button id="helperCopyBtn" class="banner-btn" style="padding: 5px 12px; font-size: 10px; font-weight: bold; white-space: nowrap; margin-left: 0; background: #1a73e8; color: #fff; border: 1px solid #1a73e8; border-radius: 4px; cursor: pointer;">코드 복사</button>
+                </div>
+                <div style="font-size: 9px; line-height: 1.5; color: #5f6368; background: #f8f9fa; padding: 6px; border-radius: 4px; border: 1px dashed #dadce0;">
+                    1. 위의 <b>[코드 복사]</b> 버튼을 누릅니다.<br/>
+                    2. 시작 버튼 우클릭 ➔ <b>[터미널]</b> 또는 <b>[PowerShell]</b> 실행<br/>
+                    3. 파란 창에 마우스 우클릭(붙여넣기) 후 <b>엔터(Enter)</b> 치면 끝!
+                </div>
             </div>
         </div>
 
